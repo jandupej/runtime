@@ -460,9 +460,90 @@ mono_llvm_dispose_ee (MonoEERef *eeref)
 
 #else /* MONO_CROSS_COMPILE */
 
+#include <llvm/ADT/StringRef.h>
+#include <llvm/ExecutionEngine/JITSymbol.h>
+#include <llvm/ExecutionEngine/Orc/CompileOnDemandLayer.h>
+#include <llvm/ExecutionEngine/Orc/CompileUtils.h>
+#include <llvm/ExecutionEngine/Orc/Core.h>
+#include <llvm/ExecutionEngine/Orc/EPCIndirectionUtils.h>
+#include <llvm/ExecutionEngine/Orc/ExecutionUtils.h>
+#include <llvm/ExecutionEngine/Orc/ExecutorProcessControl.h>
+#include <llvm/ExecutionEngine/Orc/IRCompileLayer.h>
+#include <llvm/ExecutionEngine/Orc/IRTransformLayer.h>
+#include <llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h>
+#include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
+#include <llvm/ExecutionEngine/SectionMemoryManager.h>
+#include <llvm/IR/DataLayout.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/GVN.h>
+#include <memory>
+#include <string>
+
+using namespace std;
+using namespace llvm;
+using namespace llvm::orc;
+
+class MonoLlvmJit {
+	public:
+		MonoLlvmJit(TargetMachine* pTm,
+			unique_ptr<ExecutionSession> es,
+			unique_ptr<EPCIndirectionUtils> epciu,
+			JITTargetMachineBuilder tmb,
+			DataLayout dl);
+
+		~MonoLlvmJit(void);
+
+	private:
+		unique_ptr<ExecutionSession> m_execSession;
+		unique_ptr<EPCIndirectionUtils> m_epciu;
+
+		RTDyldObjectLinkingLayer m_objectLayer;
+		IRCompileLayer m_compileLayer;
+		IRTransformLayer m_optimizeLayer;
+		DataLayout m_dataLayout;
+		MangleAndInterner m_mangle;
+
+	public:
+		const DataLayout& get_data_layout(void) const noexcept { return m_dataLayout; }
+
+		void add_module(unique_ptr<Module> m);
+};
+
+// https://llvm.org/docs/tutorial/BuildingAJIT4.html
+MonoLlvmJit::MonoLlvmJit (TargetMachine* pTm, unique_ptr<ExecutionSession> es, unique_ptr<EPCIndirectionUtils> epciu, JITTargetMachineBuilder tmb, DataLayout dl) :
+	m_execSession(move(es)), m_epciu(move(epciu)),
+	m_dataLayout(pTm->createDataLayout()),
+	m_mangle(m_execSession, m_dataLayout),
+	m_objectLayer(m_execSession, []() { return make_unique<SectionMemoryManager>(); }),
+	m_compileLayer(m_execSession, m_objectLayer, nullptr /*TODO*/),
+	m_optimizeLayer(m_execSession, m_compileLayer, nullptr/*TODO optimizeModule*/)
+{
+	
+}
+
+MonoLlvmJit::~MonoLlvmJit (void)
+{
+	if(Error e = m_execSession->endSession()) {
+		// TODO: report the error?
+	}
+
+	if(Error e = m_epciu->cleanup()) {
+		// TODO: report the error?
+	}
+}
+
+void MonoLlvmJit::add_module(unique_ptr<Module> m)
+{
+
+}
+
 void
 mono_llvm_set_unhandled_exception_handler (void)
 {
+	// do nothing
 }
 
 void
