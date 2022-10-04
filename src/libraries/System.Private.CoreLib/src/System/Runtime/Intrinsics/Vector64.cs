@@ -21,7 +21,7 @@ namespace System.Runtime.Intrinsics
         public static bool IsHardwareAccelerated
         {
             [Intrinsic]
-            get => false;
+            get => IsHardwareAccelerated;
         }
 
         /// <summary>Computes the absolute value of each element in a vector.</summary>
@@ -34,6 +34,10 @@ namespace System.Runtime.Intrinsics
             where T : struct
         {
             if (typeof(T) == typeof(byte))
+            {
+                return vector;
+            }
+            else if (typeof(T) == typeof(nuint))
             {
                 return vector;
             }
@@ -88,11 +92,11 @@ namespace System.Runtime.Intrinsics
         public static Vector64<T> AndNot<T>(Vector64<T> left, Vector64<T> right)
             where T : struct => left & ~right;
 
-        /// <summary>Reinterprets a <see cref="Vector64{T}" /> as a new <see cref="Vector64{U}" />.</summary>
+        /// <summary>Reinterprets a <see cref="Vector64{TFrom}" /> as a new <see cref="Vector64{TTo}" />.</summary>
         /// <typeparam name="TFrom">The type of the input vector.</typeparam>
         /// <typeparam name="TTo">The type of the vector <paramref name="vector" /> should be reinterpreted as.</typeparam>
         /// <param name="vector">The vector to reinterpret.</param>
-        /// <returns><paramref name="vector" /> reinterpreted as a new <see cref="Vector64{U}" />.</returns>
+        /// <returns><paramref name="vector" /> reinterpreted as a new <see cref="Vector64{TTo}" />.</returns>
         /// <exception cref="NotSupportedException">The type of <paramref name="vector" /> (<typeparamref name="TFrom" />) or the type of the target (<typeparamref name="TTo" />) is not supported.</exception>
         [Intrinsic]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -509,6 +513,14 @@ namespace System.Runtime.Intrinsics
             else if (typeof(T) == typeof(long))
             {
                 return Create((long)(object)value).As<long, T>();
+            }
+            else if (typeof(T) == typeof(nint))
+            {
+                return Create((nint)(object)value).As<nint, T>();
+            }
+            else if (typeof(T) == typeof(nuint))
+            {
+                return Create((nuint)(object)value).As<nuint, T>();
             }
             else if (typeof(T) == typeof(sbyte))
             {

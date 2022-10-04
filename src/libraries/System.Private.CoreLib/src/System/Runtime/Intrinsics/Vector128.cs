@@ -44,7 +44,7 @@ namespace System.Runtime.Intrinsics
         public static bool IsHardwareAccelerated
         {
             [Intrinsic]
-            get => false;
+            get => IsHardwareAccelerated;
         }
 
         /// <summary>Computes the absolute value of each element in a vector.</summary>
@@ -57,6 +57,10 @@ namespace System.Runtime.Intrinsics
             where T : struct
         {
             if (typeof(T) == typeof(byte))
+            {
+                return vector;
+            }
+            else if (typeof(T) == typeof(nuint))
             {
                 return vector;
             }
@@ -111,11 +115,11 @@ namespace System.Runtime.Intrinsics
         public static Vector128<T> AndNot<T>(Vector128<T> left, Vector128<T> right)
             where T : struct => left & ~right;
 
-        /// <summary>Reinterprets a <see cref="Vector128{T}" /> as a new <see cref="Vector128{U}" />.</summary>
+        /// <summary>Reinterprets a <see cref="Vector128{TFrom}" /> as a new <see cref="Vector128{TTo}" />.</summary>
         /// <typeparam name="TFrom">The type of the input vector.</typeparam>
         /// <typeparam name="TTo">The type of the vector <paramref name="vector" /> should be reinterpreted as.</typeparam>
         /// <param name="vector">The vector to reinterpret.</param>
-        /// <returns><paramref name="vector" /> reinterpreted as a new <see cref="Vector128{U}" />.</returns>
+        /// <returns><paramref name="vector" /> reinterpreted as a new <see cref="Vector128{TTo}" />.</returns>
         /// <exception cref="NotSupportedException">The type of <paramref name="vector" /> (<typeparamref name="TFrom" />) or the type of the target (<typeparamref name="TTo" />) is not supported.</exception>
         [Intrinsic]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -708,6 +712,14 @@ namespace System.Runtime.Intrinsics
             else if (typeof(T) == typeof(long))
             {
                 return Create((long)(object)value).As<long, T>();
+            }
+            else if (typeof(T) == typeof(nint))
+            {
+                return Create((nint)(object)value).As<nint, T>();
+            }
+            else if (typeof(T) == typeof(nuint))
+            {
+                return Create((nuint)(object)value).As<nuint, T>();
             }
             else if (typeof(T) == typeof(sbyte))
             {
@@ -1536,6 +1548,20 @@ namespace System.Runtime.Intrinsics
 
                 return result128;
             }
+        }
+
+        /// <summary>Creates a new <see cref="Vector128{T}" /> instance with the first element initialized to the specified value and the remaining elements initialized to zero.</summary>
+        /// <typeparam name="T">The type of the elements in the vector.</typeparam>
+        /// <param name="value">The value that element 0 will be initialized to.</param>
+        /// <returns>A new <see cref="Vector128{T}" /> instance with the first element initialized to <paramref name="value" /> and the remaining elements initialized to zero.</returns>
+        /// <exception cref="NotSupportedException">The type of <paramref name="value" /> (<typeparamref name="T" />) is not supported.</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe Vector128<T> CreateScalar<T>(T value)
+            where T : struct
+        {
+            Vector128<T> result = Vector128<T>.Zero;
+            result.SetElementUnsafe(0, value);
+            return result;
         }
 
         /// <summary>Creates a new <see cref="Vector128{Byte}" /> instance with the first element initialized to the specified value and the remaining elements initialized to zero.</summary>
