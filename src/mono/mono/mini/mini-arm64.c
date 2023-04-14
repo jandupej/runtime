@@ -3874,6 +3874,28 @@ mono_arch_output_basic_block (MonoCompile *cfg, MonoBasicBlock *bb)
 			arm_neon_fcvtn2 (code, dreg, sreg2); 
 			break;
 
+		case OP_XINSERT_LOWER:
+		case OP_XINSERT_UPPER: {
+			int dest_lane = (ins->opcode == OP_XINSERT_LOWER) ? 0 : 1;
+			if(dreg != sreg1)
+				arm_neon_mov (code, dreg, sreg1);
+			arm_neon_ins_e (code, TYPE_I64, dreg, sreg2, dest_lane, 0);
+			break;
+		}
+
+		case OP_XLOWER:
+			// We just mov, since this correctly maintains the lower part. The upper part
+			// is not cleared. Is this a security concern?
+			if (dreg != sreg1)
+				arm_neon_mov (code, dreg, sreg1);
+			break;
+
+		case OP_XUPPER: 
+			// This does not clear the upper part of the dest register. Is this a security
+			// concern?
+			arm_neon_ins_e (code, TYPE_I64, dreg, sreg1, 0, 1);
+			break;
+
 		case OP_ARM64_XADDV: {
 			switch (ins->inst_c0) {
 			case INTRINS_AARCH64_ADV_SIMD_FADDV:

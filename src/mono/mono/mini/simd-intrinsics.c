@@ -1236,12 +1236,14 @@ emit_sri_vector (MonoCompile *cfg, MonoMethod *cmethod, MonoMethodSignature *fsi
 		case SN_Dot:
 		case SN_ExtractMostSignificantBits:
 		case SN_GetElement:
-		case SN_GetLower:
-		case SN_GetUpper:
+		case SN_GetLower: // TODO: reenable with Vector64
+		case SN_GetUpper: // TODO: reenable with Vector64
 		case SN_Shuffle:
 		case SN_ToVector128:
 		case SN_ToVector128Unsafe:
 		case SN_WithElement:
+		case SN_WithLower: // TODO: reenable with Vector64
+		case SN_WithUpper: // TODO: reenable with Vector64
 			return NULL;
 		default:
 			break;
